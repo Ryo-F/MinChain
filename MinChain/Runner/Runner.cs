@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
@@ -71,7 +73,20 @@ namespace MinChain
                 miner.Start();
             }
 
-            ReadConsole();
+            if (config.WebApiPort.HasValue)
+            {
+                var handler = new WebApiHandler(config, connectionManager,
+                    inventoryManager, executor, miner);
+
+                var webHost = new WebHostBuilder()
+                    .UseKestrel()
+                    .UseUrls($"http://*:{config.WebApiPort}")
+                    .Configure(app => app.Run(handler.HandleWebRequest))
+                    .Build();
+                webHost.RunAsync();
+            }
+
+            Console.ReadLine();
 
             connectionManager.Dispose();
         }
